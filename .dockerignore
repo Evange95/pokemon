@@ -1,0 +1,40 @@
+# Build artifacts
+target/
+**/target/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+.github/
+
+# Documentation
+README.md
+*.md
+docs/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Cargo artifacts
+Cargo.lock
+**/*.rs.bk
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Testing and coverage
+*.profraw
+*.profdata
+coverage/
+
+# Misc
+flycheck*/
