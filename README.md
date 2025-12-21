@@ -35,6 +35,7 @@ The application can be configured using environment variables:
 - `HOST` - Server bind address (default: `0.0.0.0`)
 - `PORT` - Server port (default: `3000`)
 - `POKE_API_BASE_URL` - PokeAPI base URL (default: `https://pokeapi.co/api/v2`)
+- `FUN_TRANSLATIONS_BASE_URL` - Fun Translations API base URL (default: `https://api.funtranslations.com`)
 - `ENV` - Environment name (default: `development`). Currently informational for deployment; the server behavior does not change based on this value yet.
 
 ## Observability
@@ -43,12 +44,13 @@ The application includes structured logging and tracing using the `tracing` crat
 
 - **HTTP Request/Response Tracing**: Automatic logging of all HTTP requests via `tower-http` TraceLayer
 - **Domain Event Logging**: Business operations are logged through the Logger port
-- **Structured Context**: Logs include relevant context (pokemon name, habitat, error types, etc.)
+- **Structured Context**: Logs include relevant context (pokemon name, habitat, error types, translation style, etc.)
 
 Logs are written to stdout in a compact format. The application logs:
 
 - Server startup and configuration
 - Pokemon fetch requests and results
+- Translation requests, successes, and failures
 - Errors with relevant context
 - HTTP request/response details
 
@@ -75,6 +77,9 @@ Event mapping:
 - `FetchRequested`: emitted before calling the `Pokedex` port
 - `FetchSucceeded`: emitted with `name`, `habitat`, `is_legendary` on success
 - `FetchFailed`: emitted with `name` and `failure.reason` on domain error
+- `TranslationRequested`: emitted before calling the `Translator` port with translation style
+- `TranslationSucceeded`: emitted when translation succeeds with style used
+- `TranslationFailed`: emitted when translation fails with reason and fallback indicator
 
 ### Environment Variables
 
@@ -84,6 +89,7 @@ Create a `.env` file in the project root (see `.env.example` for reference):
 HOST=0.0.0.0
 PORT=3000
 POKE_API_BASE_URL=https://pokeapi.co/api/v2
+FUN_TRANSLATIONS_BASE_URL=https://api.funtranslations.com
 ENV=development
 ```
 
@@ -146,6 +152,54 @@ curl http://localhost:3000/pokemon/pikachu
   }
   ```
 
+#### GET /pokemon/translated/:name
+
+Returns Pokemon information with a translated description. Translation style is automatically selected:
+
+- **Yoda** translation for legendary Pokemon or Pokemon with cave habitat
+- **Shakespeare** translation for all other Pokemon
+- Falls back to original description if translation fails (rate limit, service unavailable, etc.)
+
+**Example Request:**
+
+```bash
+curl http://localhost:3000/pokemon/translated/mewtwo
+```
+
+**Response (Legendary Pokemon - Yoda translation):**
+
+```json
+{
+  "name": "mewtwo",
+  "description": "Created by a scientist after years of horrific gene splicing and dna engineering experiments,  it was.",
+  "habitat": "rare",
+  "isLegendary": true
+}
+```
+
+**Response (Normal Pokemon - Shakespeare translation):**
+
+```bash
+curl http://localhost:3000/pokemon/translated/pikachu
+```
+
+```json
+{
+  "name": "pikachu",
+  "description": "At which hour several of these pokémon gather,  their electricity couldst buildeth and cause lightning storms.",
+  "habitat": "forest",
+  "isLegendary": false
+}
+```
+
+**Graceful Fallback:**
+
+If the Fun Translations API is unavailable or rate-limited, the endpoint returns the original untranslated description with a 200 OK response. Translation failures are logged but do not affect the user experience.
+
+**Error Responses:**
+
+Same as the `/pokemon/:name` endpoint (404, 503, 500).
+
 ## Development
 
 ### Available Tasks
@@ -199,12 +253,23 @@ This will automatically run tests, rebuild, and format your code on every file c
 
 The project follows a clean hexagonal (ports & adapters) architecture:
 
-- **Domain (`src/domain/`)**: Core business entities (`Pokemon` model)
-- **Ports (`src/ports/`)**: Interfaces defining contracts (`Pokedex` trait)
+- **Domain (`src/domain/`)**: Core business entities and domain events
+  - `Pokemon` model with type aliases
+  - Domain errors: `PokemonErrors`, `TranslationErrors`
+  - Domain events: `PokemonEvent` with fetch and translation variants
+  - Translation types: `TranslationStyle`, `TranslationFailureReason`
+- **Ports (`src/ports/`)**: Interfaces defining contracts
+  - `Pokedex`: Fetch Pokemon data
+  - `Translator`: Translate text to different styles
+  - `Logger`: Domain event observation
 - **Adapters (`src/adapter/`)**: Implementations of ports
-  - `StaticPokemonApi`: Returns static Mewtwo data (implements `Pokedex`)
-  - `http`: Axum HTTP adapter
+  - `PokeApiAdapter`: Fetches Pokemon from PokeAPI (implements `Pokedex`)
+  - `FunTranslationsAdapter`: Translates descriptions via Fun Translations API (implements `Translator`)
+  - `TracingLogger`: Maps domain events to structured logs (implements `Logger`)
+  - `http`: Axum HTTP adapter with routes
 - **Application (`src/application/`)**: Use case orchestration (`PokemonService`)
+  - `get_pokemon()`: Fetch Pokemon with event logging
+  - `get_translated_pokemon()`: Fetch and translate with style selection and fallback
 - **Config (`src/config.rs`)**: Environment configuration management
 - **Main (`src/main.rs`)**: Dependency injection and server bootstrap
 

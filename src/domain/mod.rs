@@ -18,6 +18,19 @@ pub enum PokemonErrors {
     InvalidPokemonData(String),
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum TranslationStyle {
+    Yoda,
+    Shakespeare,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum TranslationErrors {
+    TranslationRateLimited,
+    TranslationUnavailable,
+    InvalidTranslationData(String),
+}
+
 /// Domain events for observability
 /// These represent business-significant occurrences in the domain
 #[derive(Debug, Clone)]
@@ -34,11 +47,31 @@ pub enum PokemonEvent {
         name: String,
         reason: PokemonFailureReason,
     },
+    TranslationRequested {
+        name: String,
+        style: TranslationStyle,
+    },
+    TranslationSucceeded {
+        name: String,
+        style: TranslationStyle,
+    },
+    TranslationFailed {
+        name: String,
+        reason: TranslationFailureReason,
+        fallback_used: bool,
+    },
 }
 
 #[derive(Debug, Clone)]
 pub enum PokemonFailureReason {
     NotFound,
+    ServiceUnavailable,
+    DataCorrupted,
+}
+
+#[derive(Debug, Clone)]
+pub enum TranslationFailureReason {
+    RateLimited,
     ServiceUnavailable,
     DataCorrupted,
 }

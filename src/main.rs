@@ -10,7 +10,10 @@ use config::Config;
 use std::sync::Arc;
 use tower_http::trace::TraceLayer;
 
-use crate::{adapter::poke_api::PokeApiAdapter, application::PokemonService};
+use crate::{
+    adapter::fun_translations::FunTranslationsAdapter, adapter::poke_api::PokeApiAdapter,
+    application::PokemonService,
+};
 
 #[tokio::main]
 async fn main() {
@@ -24,7 +27,8 @@ async fn main() {
 
     let config = Config::from_env().expect("Failed to load configuration");
     let address = config.address();
-    let base_url = config.poke_api_base_url();
+    let poke_api_base_url = config.poke_api_base_url();
+    let fun_translations_base_url = config.fun_translations_base_url();
 
     tracing::info!("Starting Pokemon API server");
     tracing::info!(
@@ -34,8 +38,12 @@ async fn main() {
     );
 
     let logger = Arc::new(TracingLogger::new());
-    let pokedex = Arc::new(PokeApiAdapter::new(base_url.to_string()));
-    let pokemon_service = Arc::new(PokemonService::new(pokedex, logger));
+    let pokedex = Arc::new(PokeApiAdapter::new(poke_api_base_url.to_string()));
+    let translator = Arc::new(FunTranslationsAdapter::new(
+        fun_translations_base_url.to_string(),
+    ));
+    let pokemon_service =
+        Arc::new(PokemonService::new(pokedex, logger).with_translator(translator));
     let app = http::router(pokemon_service).layer(TraceLayer::new_for_http());
     let listener = tokio::net::TcpListener::bind(&address)
         .await

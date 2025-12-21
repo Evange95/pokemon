@@ -65,7 +65,7 @@ impl Pokedex for PokeApiAdapter {
                     .flavor_text_entries
                     .iter()
                     .find(|entry| entry.language.name == "en")
-                    .map(|entry| entry.flavor_text.replace('\n', " ").replace('\u{c}', " "))
+                    .map(|entry| entry.flavor_text.replace(['\n', '\u{c}'], " "))
                     .unwrap_or_else(|| "No description available".to_string());
 
                 Ok(Pokemon {
@@ -98,11 +98,11 @@ mod tests {
         let fixture = match pokemon_name {
             "mewtwo" => include_str!("fixtures/mewtwo.json"),
             "pikachu" => include_str!("fixtures/pikachu.json"),
-            _ => panic!("Unknown pokemon fixture: {}", pokemon_name),
+            _ => panic!("Unknown pokemon fixture: {pokemon_name}"),
         };
 
         Mock::given(method("GET"))
-            .and(path(format!("/pokemon-species/{}", pokemon_name)))
+            .and(path(format!("/pokemon-species/{pokemon_name}")))
             .respond_with(ResponseTemplate::new(200).set_body_string(fixture))
             .mount(&mock_server)
             .await;

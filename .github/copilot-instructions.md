@@ -91,6 +91,7 @@ The application uses a dedicated `config` module (`src/config.rs`) for configura
 - `HOST` - Default: `0.0.0.0`
 - `PORT` - Default: `3000`
 - `POKE_API_BASE_URL` - Default: `https://pokeapi.co/api/v2`
+- `FUN_TRANSLATIONS_BASE_URL` - Default: `https://api.funtranslations.com`
 - `ENV` - Default: `development` (informational; not currently used in app logic)
 
 #### Pattern
@@ -125,12 +126,30 @@ The project uses **Axum 0.7** as the web framework, built on Tokio async runtime
     - 500 Internal Server Error: When data parsing fails
   - Fields are serialized to camelCase (e.g., `isLegendary`)
 
+- `GET /pokemon/translated/:name` - Returns Pokemon data with translated description
+  - Location: `src/adapter/http/translated.rs`
+  - Handler: `get_translated_pokemon_handler` function
+  - Translation Style Selection:
+    - **Yoda**: For legendary Pokemon OR Pokemon with cave habitat
+    - **Shakespeare**: For all other Pokemon
+  - Graceful Fallback: Returns original description if translation fails (rate limit, service unavailable, parse error)
+  - Success Response (200): JSON with `PokemonResponse` struct (reuses DTO from pokemon.rs)
+  - Error Responses: Same as `/pokemon/:name` (Pokemon not found, service unavailable, invalid data)
+  - Uses Fun Translations API via `FunTranslationsAdapter`
+
 ### Ports & Adapters Pattern
 
-- **Domain Layer**: `Pokemon` struct and `PokemonErrors` enum in `src/domain/` represent core business entities and domain errors
-- **Port (Driving)**: `Pokedex` trait in `src/ports/` defines the application interface (returns `Result<Pokemon, PokemonErrors>`)
-- **Port (Observability)**: `Logger` trait in `src/ports/` defines domain logging interface for observability
-  - Provides `info()`, `error()`, `warn()`, `debug()` methods with structured context
+- **Domain Layer**: Core business entities, errors, and domain events in `src/domain/`
+  - `Pokemon` struct with type aliases (`PokemonName`, `Description`, `Habitat`, `IsLegendary`)
+  - Domain errors: `PokemonErrors`, `TranslationErrors`
+  - Domain events: `PokemonEvent` with variants for fetch and translation operations
+  - Translation types: `TranslationStyle` (Yoda, Shakespeare), `TranslationFailureReason`
+- **Port (Driving - Data)**: `Pokedex` trait in `src/ports/` for fetching Pokemon (returns `Result<Pokemon, PokemonErrors>`)
+- **Port (Driving - Translation)**: `Translator` trait in `src/ports/` for translating text
+  - `translate(description, style)` → `Result<Description, TranslationErrors>`
+  - Style-agnostic interface allowing different translation strategies
+- **Port (Observability)**: `Logger` trait in `src/ports/` for domain event observation
+  - Receives `PokemonEvent` references and delegates to infrastructure
   - Infrastructure-agnostic - allows swapping logging implementations without changing domain code
 - **Adapter (Driving)**: HTTP server in `src/adapter/http/` maps requests to application service
   - Organized by route: each route module exports `routes()` function
@@ -138,21 +157,32 @@ The project uses **Axum 0.7** as the web framework, built on Tokio async runtime
   - Maps `PokemonErrors` to HTTP status codes via `IntoResponse`
   - Integrated with tower-http TraceLayer for HTTP request/response logging
 - **Application Layer**: `PokemonService` in `src/application/` coordinates use cases and port calls
-  - Uses Logger port to emit domain events and trace execution flow
-  - Logs successful operations and errors with structured context
+  - `get_pokemon()`: Fetches Pokemon and emits domain events
+  - `get_translated_pokemon()`: Fetches Pokemon, determines translation style, translates description, and handles fallback
+    - Translation style selection: Cave habitat OR legendary → Yoda; otherwise → Shakespeare
+    - Graceful fallback: Returns original description if translation fails
+  - Uses Logger port to emit domain events throughout execution flow
 - **Adapter (Driven - Data)**: `PokeApiAdapter` in `src/adapter/poke_api.rs` implements `Pokedex` by calling PokeAPI
   - Handles HTTP status codes: 200 (success), 404 (not found), 5xx (unavailable)
   - Maps infrastructure errors to domain errors
   - Uses fixtures from `src/adapter/fixtures/` for testing with wiremock
+- **Adapter (Driven - Translation)**: `FunTranslationsAdapter` in `src/adapter/fun_translations.rs` implements `Translator`
+  - Calls Fun Translations API endpoints: `/translate/yoda` and `/translate/shakespeare`
+  - Error mapping: 429 → TranslationRateLimited, 5xx → TranslationUnavailable, parse errors → InvalidTranslationData
+  - Uses POST requests with form-encoded text
+  - Tested with wiremock for all success and error scenarios
 - **Adapter (Driven - Logging)**: `TracingLogger` in `src/adapter/tracing_logger.rs` implements `Logger` using tracing crate
-  - Maps domain logging calls to structured tracing events
-  - Formats context key-value pairs for tracing output
+  - Maps domain events to structured tracing events (info, warn, error levels)
+  - Handles both Pokemon fetch events and translation events
+  - Formats context key-value pairs for tracing output (pokemon.name, translation.style, etc.)
 - **Composition**: `main.rs` constructs adapters, services, and injects dependencies
   - Initializes tracing subscriber for observability
-  - Wires Logger and Pokedex adapters into PokemonService
+  - Wires Logger, Pokedex, and Translator adapters into PokemonService
+  - Uses builder pattern: `PokemonService::new(pokedex, logger).with_translator(translator)`
 
 Flow: HTTP Request → HTTP Adapter → Application Service → Port → Driven Adapter
 Observability: Application Service → Logger Port → TracingLogger Adapter
+Translation: Application Service → Translator Port → FunTranslationsAdapter → Fun Translations API
 
 Benefits:
 
@@ -174,6 +204,14 @@ Benefits:
   - `PokemonNotFound(String)` - Pokemon doesn't exist in the Pokedex
   - `PokedexUnavailable` - Pokedex service cannot be accessed (maps to infrastructure failures)
   - `InvalidPokemonData(String)` - Data from Pokedex is malformed or incomplete
+- `TranslationErrors` (in `src/domain/`) - Translation error enum
+  - `TranslationRateLimited` - Translation API rate limit exceeded (429)
+  - `TranslationUnavailable` - Translation service cannot be accessed (5xx errors)
+  - `InvalidTranslationData(String)` - Translation response is malformed or incomplete
+- `PokemonEvent` (in `src/domain/`) - Domain events for observability
+  - Fetch events: `FetchRequested`, `FetchSucceeded`, `FetchFailed`
+  - Translation events: `TranslationRequested`, `TranslationSucceeded`, `TranslationFailed`
+  - All events include relevant context (name, habitat, style, failure reason, etc.)
 - `PokemonResponse` (in `src/adapter/http/pokemon.rs`) - HTTP response DTO
   - Implements `From<Pokemon>` for domain → DTO conversion
   - Same fields as Pokemon, serialized to camelCase

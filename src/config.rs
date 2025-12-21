@@ -5,6 +5,7 @@ pub struct Config {
     pub host: String,
     pub port: u16,
     pub poke_api_base_url: String,
+    pub fun_translations_base_url: String,
 }
 
 impl Config {
@@ -16,11 +17,14 @@ impl Config {
             .map_err(|_| "PORT must be a valid number between 0 and 65535".to_string())?;
         let poke_api_base_url = env::var("POKE_API_BASE_URL")
             .unwrap_or_else(|_| "https://pokeapi.co/api/v2".to_string());
+        let fun_translations_base_url = env::var("FUN_TRANSLATIONS_BASE_URL")
+            .unwrap_or_else(|_| "https://api.funtranslations.com".to_string());
 
         Ok(Config {
             host,
             port,
             poke_api_base_url,
+            fun_translations_base_url,
         })
     }
 
@@ -30,6 +34,10 @@ impl Config {
 
     pub fn poke_api_base_url(&self) -> &str {
         &self.poke_api_base_url
+    }
+
+    pub fn fun_translations_base_url(&self) -> &str {
+        &self.fun_translations_base_url
     }
 }
 
@@ -48,12 +56,17 @@ mod tests {
         env::remove_var("HOST");
         env::remove_var("PORT");
         env::remove_var("POKE_API_BASE_URL");
+        env::remove_var("FUN_TRANSLATIONS_BASE_URL");
 
         let config = Config::from_env().unwrap();
         assert_eq!(config.host, "0.0.0.0");
         assert_eq!(config.port, 3000);
         assert_eq!(config.address(), "0.0.0.0:3000");
         assert_eq!(config.poke_api_base_url(), "https://pokeapi.co/api/v2");
+        assert_eq!(
+            config.fun_translations_base_url(),
+            "https://api.funtranslations.com"
+        );
     }
 
     #[test]
@@ -71,6 +84,7 @@ mod tests {
         env::remove_var("HOST");
         env::remove_var("PORT");
         env::remove_var("POKE_API_BASE_URL");
+        env::remove_var("FUN_TRANSLATIONS_BASE_URL");
     }
 
     #[test]
@@ -88,6 +102,7 @@ mod tests {
         env::remove_var("HOST");
         env::remove_var("PORT");
         env::remove_var("POKE_API_BASE_URL");
+        env::remove_var("FUN_TRANSLATIONS_BASE_URL");
     }
 
     #[test]

@@ -1,5 +1,5 @@
 use crate::{
-    domain::{PokemonEvent, PokemonFailureReason},
+    domain::{PokemonEvent, PokemonFailureReason, TranslationFailureReason, TranslationStyle},
     ports::Logger,
 };
 
@@ -47,6 +47,48 @@ impl Logger for TracingLogger {
                     pokemon.name = %name,
                     pokemon.failure.reason = reason_str,
                     "Pokemon fetch failed"
+                );
+            }
+            PokemonEvent::TranslationRequested { name, style } => {
+                let style_str = match style {
+                    TranslationStyle::Yoda => "yoda",
+                    TranslationStyle::Shakespeare => "shakespeare",
+                };
+                tracing::info!(
+                    pokemon.translation.requested = true,
+                    pokemon.name = %name,
+                    translation.style = style_str,
+                    "Translation requested"
+                );
+            }
+            PokemonEvent::TranslationSucceeded { name, style } => {
+                let style_str = match style {
+                    TranslationStyle::Yoda => "yoda",
+                    TranslationStyle::Shakespeare => "shakespeare",
+                };
+                tracing::info!(
+                    pokemon.translation.succeeded = true,
+                    pokemon.name = %name,
+                    translation.style = style_str,
+                    "Translation succeeded"
+                );
+            }
+            PokemonEvent::TranslationFailed {
+                name,
+                reason,
+                fallback_used,
+            } => {
+                let reason_str = match reason {
+                    TranslationFailureReason::RateLimited => "rate_limited",
+                    TranslationFailureReason::ServiceUnavailable => "service_unavailable",
+                    TranslationFailureReason::DataCorrupted => "data_corrupted",
+                };
+                tracing::warn!(
+                    pokemon.translation.failed = true,
+                    pokemon.name = %name,
+                    translation.failure.reason = reason_str,
+                    translation.fallback_used = %fallback_used,
+                    "Translation failed"
                 );
             }
         }

@@ -33,17 +33,16 @@ pub struct ErrorResponse {
 impl IntoResponse for PokemonErrors {
     fn into_response(self) -> Response {
         let (status, message) = match self {
-            PokemonErrors::PokemonNotFound(name) => (
-                StatusCode::NOT_FOUND,
-                format!("Pokemon '{}' not found", name),
-            ),
+            PokemonErrors::PokemonNotFound(name) => {
+                (StatusCode::NOT_FOUND, format!("Pokemon '{name}' not found"))
+            }
             PokemonErrors::PokedexUnavailable => (
                 StatusCode::SERVICE_UNAVAILABLE,
                 "Pokedex service is currently unavailable".to_string(),
             ),
             PokemonErrors::InvalidPokemonData(msg) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Invalid pokemon data: {}", msg),
+                format!("Invalid pokemon data: {msg}"),
             ),
         };
 
