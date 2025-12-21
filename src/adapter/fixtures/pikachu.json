@@ -1,0 +1,136 @@
+{
+  "base_happiness": 50,
+  "capture_rate": 190,
+  "color": {
+    "name": "yellow",
+    "url": "https://pokeapi.co/api/v2/pokemon-color/10/"
+  },
+  "egg_groups": [
+    {
+      "name": "ground",
+      "url": "https://pokeapi.co/api/v2/egg-group/5/"
+    },
+    {
+      "name": "fairy",
+      "url": "https://pokeapi.co/api/v2/egg-group/6/"
+    }
+  ],
+  "evolution_chain": {
+    "url": "https://pokeapi.co/api/v2/evolution-chain/10/"
+  },
+  "evolves_from_species": {
+    "name": "pichu",
+    "url": "https://pokeapi.co/api/v2/pokemon-species/172/"
+  },
+  "flavor_text_entries": [
+    {
+      "flavor_text": "When several of\nthese POKéMON\ngather, their\felectricity could\nbuild and cause\nlightning storms.",
+      "language": {
+        "name": "en",
+        "url": "https://pokeapi.co/api/v2/language/9/"
+      },
+      "version": {
+        "name": "red",
+        "url": "https://pokeapi.co/api/v2/version/1/"
+      }
+    },
+    {
+      "flavor_text": "It keeps its tail\nraised to monitor\nits surroundings.\fIf you yank its\ntail, it will try\nto bite you.",
+      "language": {
+        "name": "en",
+        "url": "https://pokeapi.co/api/v2/language/9/"
+      },
+      "version": {
+        "name": "blue",
+        "url": "https://pokeapi.co/api/v2/version/2/"
+      }
+    }
+  ],
+  "form_descriptions": [],
+  "forms_switchable": false,
+  "gender_rate": 4,
+  "genera": [
+    {
+      "genus": "ねずみポケモン",
+      "language": {
+        "name": "ja-Hrkt",
+        "url": "https://pokeapi.co/api/v2/language/1/"
+      }
+    },
+    {
+      "genus": "Mouse Pokémon",
+      "language": {
+        "name": "en",
+        "url": "https://pokeapi.co/api/v2/language/9/"
+      }
+    }
+  ],
+  "generation": {
+    "name": "generation-i",
+    "url": "https://pokeapi.co/api/v2/generation/1/"
+  },
+  "growth_rate": {
+    "name": "medium",
+    "url": "https://pokeapi.co/api/v2/growth-rate/2/"
+  },
+  "habitat": {
+    "name": "forest",
+    "url": "https://pokeapi.co/api/v2/pokemon-habitat/2/"
+  },
+  "has_gender_differences": true,
+  "hatch_counter": 10,
+  "id": 25,
+  "is_baby": false,
+  "is_legendary": false,
+  "is_mythical": false,
+  "name": "pikachu",
+  "names": [
+    {
+      "language": {
+        "name": "ja-Hrkt",
+        "url": "https://pokeapi.co/api/v2/language/1/"
+      },
+      "name": "ピカチュウ"
+    },
+    {
+      "language": {
+        "name": "en",
+        "url": "https://pokeapi.co/api/v2/language/9/"
+      },
+      "name": "Pikachu"
+    }
+  ],
+  "order": 35,
+  "pal_park_encounters": [
+    {
+      "area": {
+        "name": "forest",
+        "url": "https://pokeapi.co/api/v2/pal-park-area/1/"
+      },
+      "base_score": 80,
+      "rate": 10
+    }
+  ],
+  "pokedex_numbers": [
+    {
+      "entry_number": 25,
+      "pokedex": {
+        "name": "national",
+        "url": "https://pokeapi.co/api/v2/pokedex/1/"
+      }
+    }
+  ],
+  "shape": {
+    "name": "quadruped",
+    "url": "https://pokeapi.co/api/v2/pokemon-shape/8/"
+  },
+  "varieties": [
+    {
+      "is_default": true,
+      "pokemon": {
+        "name": "pikachu",
+        "url": "https://pokeapi.co/api/v2/pokemon/25/"
+      }
+    }
+  ]
+}

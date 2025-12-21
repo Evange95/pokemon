@@ -11,7 +11,7 @@ impl PokemonService {
         Self { pokedex }
     }
 
-    pub fn get_pokemon(&self, name: String) -> Pokemon {
-        self.pokedex.get_pokemon(name)
+    pub async fn get_pokemon(&self, name: String) -> Pokemon {
+        self.pokedex.get_pokemon(name).await
     }
 }

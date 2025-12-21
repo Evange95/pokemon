@@ -8,8 +8,7 @@ use adapter::http;
 use config::Config;
 use std::sync::Arc;
 
-use crate::adapter::StaticPokemonApi;
-use crate::application::PokemonService;
+use crate::{adapter::poke_api::PokeApiAdapter, application::PokemonService};
 
 #[tokio::main]
 async fn main() {
@@ -17,8 +16,9 @@ async fn main() {
 
     let config = Config::from_env().expect("Failed to load configuration");
     let address = config.address();
+    let base_url = config.poke_api_base_url();
 
-    let pokedex = Arc::new(StaticPokemonApi);
+    let pokedex = Arc::new(PokeApiAdapter::new(base_url.to_string()));
     let pokemon_service = Arc::new(PokemonService::new(pokedex));
     let app = http::router(pokemon_service);
     let listener = tokio::net::TcpListener::bind(&address)

@@ -29,7 +29,7 @@ async fn get_pokemon_handler(
     State(pokedex_service): State<Arc<PokemonService>>,
     Path(name): Path<String>,
 ) -> Json<PokemonResponse> {
-    let resp: Pokemon = pokedex_service.get_pokemon(name);
+    let resp: Pokemon = pokedex_service.get_pokemon(name).await;
     Json(resp.into())
 }
 
@@ -41,13 +41,27 @@ pub fn routes(pokedex_service: Arc<PokemonService>) -> Router {
 
 #[cfg(test)]
 mod tests {
+    use crate::ports::Pokedex;
+
     use super::*;
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use std::sync::Arc;
     use tower::util::ServiceExt; // oneshot
 
-    use crate::adapter::StaticPokemonApi;
+    pub struct StaticPokemonApi;
+
+    #[async_trait::async_trait]
+    impl Pokedex for StaticPokemonApi {
+        async fn get_pokemon(&self, _name: String) -> Pokemon {
+            Pokemon {
+            name: "mewtwo".to_string(),
+            description: "It was created by a scientist after years of horrific gene splicing and DNA engineering experiments.".to_string(),
+            habitat: "rare".to_string(),
+            is_legendary: true,
+        }
+        }
+    }
 
     #[tokio::test]
     async fn test_get_pokemon_returns_mewtwo() {

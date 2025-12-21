@@ -4,6 +4,7 @@ use std::env;
 pub struct Config {
     pub host: String,
     pub port: u16,
+    pub poke_api_base_url: String,
 }
 
 impl Config {
@@ -13,12 +14,22 @@ impl Config {
             .unwrap_or_else(|_| "3000".to_string())
             .parse::<u16>()
             .map_err(|_| "PORT must be a valid number between 0 and 65535".to_string())?;
+        let poke_api_base_url = env::var("POKE_API_BASE_URL")
+            .unwrap_or_else(|_| "https://pokeapi.co/api/v2".to_string());
 
-        Ok(Config { host, port })
+        Ok(Config {
+            host,
+            port,
+            poke_api_base_url,
+        })
     }
 
     pub fn address(&self) -> String {
         format!("{}:{}", self.host, self.port)
+    }
+
+    pub fn poke_api_base_url(&self) -> &str {
+        &self.poke_api_base_url
     }
 }
 
@@ -36,11 +47,13 @@ mod tests {
 
         env::remove_var("HOST");
         env::remove_var("PORT");
+        env::remove_var("POKE_API_BASE_URL");
 
         let config = Config::from_env().unwrap();
         assert_eq!(config.host, "0.0.0.0");
         assert_eq!(config.port, 3000);
         assert_eq!(config.address(), "0.0.0.0:3000");
+        assert_eq!(config.poke_api_base_url(), "https://pokeapi.co/api/v2");
     }
 
     #[test]
@@ -57,6 +70,7 @@ mod tests {
 
         env::remove_var("HOST");
         env::remove_var("PORT");
+        env::remove_var("POKE_API_BASE_URL");
     }
 
     #[test]
@@ -73,6 +87,7 @@ mod tests {
 
         env::remove_var("HOST");
         env::remove_var("PORT");
+        env::remove_var("POKE_API_BASE_URL");
     }
 
     #[test]
@@ -89,6 +104,7 @@ mod tests {
         );
 
         env::remove_var("PORT");
+        env::remove_var("POKE_API_BASE_URL");
     }
 
     #[test]
@@ -101,5 +117,6 @@ mod tests {
         assert!(result.is_err());
 
         env::remove_var("PORT");
+        env::remove_var("POKE_API_BASE_URL");
     }
 }

@@ -61,7 +61,7 @@ cargo make test       # Verify tests pass with clean build
 - `src/domain/` - Domain models and business entities (`Pokemon`)
 - `src/ports/` - Port traits defining contracts (`Pokedex`)
 - `src/adapter/` - Adapter implementations
-  - `mod.rs` - Contains `StaticPokemonApi` implementation
+  - `mod.rs` - Contains `StaticPokemonApi` (static test data) and `PokeApiAdapter` (real API integration)
   - `http/` - Axum HTTP adapter organized by route
     - `mod.rs` - Router assembly, exports `router()` function
     - `pokemon.rs` - Pokemon route handler, response DTO, and tests
@@ -113,7 +113,7 @@ The project uses **Axum 0.7** as the web framework, built on Tokio async runtime
 
 ### Current Endpoints
 
-- `GET /pokemon/:name` - Returns Pokemon data (currently static Mewtwo data)
+- `GET /pokemon/:name` - Returns Pokemon data fetched from PokeAPI
   - Location: `src/adapter/http/pokemon.rs`
   - Handler: `get_pokemon_handler` function
   - Response: JSON with `PokemonResponse` struct
@@ -127,7 +127,8 @@ The project uses **Axum 0.7** as the web framework, built on Tokio async runtime
   - Organized by route: each route module exports `routes()` function
   - `http/mod.rs` merges all route modules and exports `router()` function
 - **Application Layer**: `PokemonService` in `src/application/` coordinates use cases and port calls
-- **Adapter (Driven)**: `StaticPokemonApi` in `src/adapter/mod.rs` implements `Pokedex`
+- **Adapter (Driven)**: `PokeApiAdapter` in `src/adapter/mod.rs` implements `Pokedex` by calling PokeAPI
+  - Also includes `StaticPokemonApi` for testing purposes
 - **Composition**: `main.rs` constructs adapters, service, and injects dependencies
 
 Flow: HTTP Request → HTTP Adapter → Application Service → Port → Driven Adapter
@@ -163,6 +164,7 @@ Each route module in `src/adapter/http/` follows this pattern:
 Example: `pokemon.rs` contains `PokemonResponse`, `get_pokemon_handler`, `routes()`, and tests.
 
 To add a new route:
+
 1. Create `src/adapter/http/new_route.rs` following the pattern above
 2. Add `mod new_route;` to `src/adapter/http/mod.rs`
 3. Merge routes in `router()` function: `.merge(new_route::routes(service))`
@@ -177,6 +179,8 @@ Current dependencies in `Cargo.toml`:
 - `serde_json = "1.0"` - JSON support
 - `tower = { version = "0.4", features = ["util"] }` - Middleware (used in tests)
 - `dotenvy = "0.15"` - .env file support for local development
+- `reqwest = { version = "0.11", features = ["json"] }` - HTTP client for API calls
+- `async-trait = "0.1"` - Async trait support
 
 When adding dependencies:
 

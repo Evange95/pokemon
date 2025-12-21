@@ -61,7 +61,7 @@ cargo run
 
 #### GET /pokemon/:name
 
-Returns Pokemon information. Currently returns static data for Mewtwo regardless of the requested name.
+Returns Pokemon information fetched from the [PokeAPI](https://pokeapi.co).
 
 **Example Request:**
 
@@ -73,10 +73,10 @@ curl http://localhost:3000/pokemon/pikachu
 
 ```json
 {
-  "name": "mewtwo",
-  "description": "It was created by a scientist after years of horrific gene splicing and DNA engineering experiments.",
-  "habitat": "rare",
-  "isLegendary": true
+  "name": "pikachu",
+  "description": "When several of these POKéMON gather, their electricity could build and cause lightning storms.",
+  "habitat": "forest",
+  "isLegendary": false
 }
 ```
 

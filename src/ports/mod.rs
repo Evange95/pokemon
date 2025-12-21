@@ -1,5 +1,6 @@
 use crate::domain::Pokemon;
 
+#[async_trait::async_trait]
 pub trait Pokedex: Send + Sync {
-    fn get_pokemon(&self, name: String) -> Pokemon;
+    async fn get_pokemon(&self, name: String) -> Pokemon;
 }
