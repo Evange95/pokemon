@@ -78,13 +78,19 @@ pub fn routes(pokedex_service: Arc<PokemonService>) -> Router {
 
 #[cfg(test)]
 mod tests {
-    use crate::ports::Pokedex;
+    use crate::ports::{Logger, Pokedex};
 
     use super::*;
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use std::sync::Arc;
     use tower::util::ServiceExt; // oneshot
+
+    pub struct MockLogger;
+
+    impl Logger for MockLogger {
+        fn log(&self, _event: &crate::domain::PokemonEvent) {}
+    }
 
     pub struct StaticPokemonApi;
 
@@ -103,7 +109,8 @@ mod tests {
     #[tokio::test]
     async fn test_get_pokemon_returns_mewtwo() {
         let api = Arc::new(StaticPokemonApi);
-        let service = Arc::new(PokemonService::new(api));
+        let logger = Arc::new(MockLogger);
+        let service = Arc::new(PokemonService::new(api, logger));
         let app = routes(service);
 
         let response = app
@@ -132,7 +139,8 @@ mod tests {
     #[tokio::test]
     async fn test_response_json_format() {
         let api = Arc::new(StaticPokemonApi);
-        let service = Arc::new(PokemonService::new(api));
+        let logger = Arc::new(MockLogger);
+        let service = Arc::new(PokemonService::new(api, logger));
         let app = routes(service);
 
         let response = app
@@ -168,7 +176,8 @@ mod tests {
     #[tokio::test]
     async fn test_get_pokemon_returns_404_when_not_found() {
         let api = Arc::new(ErrorPokemonApi);
-        let service = Arc::new(PokemonService::new(api));
+        let logger = Arc::new(MockLogger);
+        let service = Arc::new(PokemonService::new(api, logger));
         let app = routes(service);
 
         let response = app

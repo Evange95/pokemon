@@ -17,3 +17,28 @@ pub enum PokemonErrors {
     PokedexUnavailable,
     InvalidPokemonData(String),
 }
+
+/// Domain events for observability
+/// These represent business-significant occurrences in the domain
+#[derive(Debug, Clone)]
+pub enum PokemonEvent {
+    FetchRequested {
+        name: String,
+    },
+    FetchSucceeded {
+        name: String,
+        habitat: String,
+        is_legendary: bool,
+    },
+    FetchFailed {
+        name: String,
+        reason: PokemonFailureReason,
+    },
+}
+
+#[derive(Debug, Clone)]
+pub enum PokemonFailureReason {
+    NotFound,
+    ServiceUnavailable,
+    DataCorrupted,
+}

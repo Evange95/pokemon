@@ -37,6 +37,45 @@ The application can be configured using environment variables:
 - `POKE_API_BASE_URL` - PokeAPI base URL (default: `https://pokeapi.co/api/v2`)
 - `ENV` - Environment name (default: `development`). Currently informational for deployment; the server behavior does not change based on this value yet.
 
+## Observability
+
+The application includes structured logging and tracing using the `tracing` crate:
+
+- **HTTP Request/Response Tracing**: Automatic logging of all HTTP requests via `tower-http` TraceLayer
+- **Domain Event Logging**: Business operations are logged through the Logger port
+- **Structured Context**: Logs include relevant context (pokemon name, habitat, error types, etc.)
+
+Logs are written to stdout in a compact format. The application logs:
+
+- Server startup and configuration
+- Pokemon fetch requests and results
+- Errors with relevant context
+- HTTP request/response details
+
+### Domain Events (Examples)
+
+The application emits domain-oriented events via the `Logger` port. These are mapped to structured logs with clear business context.
+
+Success example (fetching `mewtwo`):
+
+```
+INFO Pokemon fetch requested pokemon.fetch.requested=true pokemon.name=mewtwo
+INFO Pokemon fetch succeeded pokemon.fetch.succeeded=true pokemon.name=mewtwo pokemon.habitat=rare pokemon.is_legendary=true
+```
+
+Failure example (unknown pokemon):
+
+```
+INFO Pokemon fetch requested pokemon.fetch.requested=true pokemon.name=nonexistent
+ERROR Pokemon fetch failed pokemon.fetch.failed=true pokemon.name=nonexistent pokemon.failure.reason="not_found"
+```
+
+Event mapping:
+
+- `FetchRequested`: emitted before calling the `Pokedex` port
+- `FetchSucceeded`: emitted with `name`, `habitat`, `is_legendary` on success
+- `FetchFailed`: emitted with `name` and `failure.reason` on domain error
+
 ### Environment Variables
 
 Create a `.env` file in the project root (see `.env.example` for reference):

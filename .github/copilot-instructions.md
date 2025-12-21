@@ -58,15 +58,16 @@ cargo make test       # Verify tests pass with clean build
 ## Project Structure
 
 - `src/main.rs` - Application entry point, dependency injection, and server bootstrap
-- `src/domain/` - Domain models and business entities (`Pokemon`)
-- `src/ports/` - Port traits defining contracts (`Pokedex`)
+- `src/domain/` - Domain models and business entities (`Pokemon`, `PokemonErrors`)
+- `src/ports/` - Port traits defining contracts (`Pokedex`, `Logger`)
 - `src/adapter/` - Adapter implementations
-  - `mod.rs` - Contains `StaticPokemonApi` (static test data) and `PokeApiAdapter` (real API integration)
+  - `poke_api.rs` - `PokeApiAdapter` (real API integration)
+  - `tracing_logger.rs` - `TracingLogger` (logging adapter using tracing crate)
   - `http/` - Axum HTTP adapter organized by route
     - `mod.rs` - Router assembly, exports `router()` function
     - `pokemon.rs` - Pokemon route handler, response DTO, and tests
 - `src/application/` - Use case orchestration layer
-  - `PokemonService` - Application service coordinating port calls
+  - `PokemonService` - Application service coordinating port calls with logging
 - `src/config.rs` - Configuration module for environment variable management
 - `Makefile.toml` - Task definitions (cargo-make configuration)
 - `.github/workflows/ci.yml` - CI pipeline configuration
@@ -128,18 +129,30 @@ The project uses **Axum 0.7** as the web framework, built on Tokio async runtime
 
 - **Domain Layer**: `Pokemon` struct and `PokemonErrors` enum in `src/domain/` represent core business entities and domain errors
 - **Port (Driving)**: `Pokedex` trait in `src/ports/` defines the application interface (returns `Result<Pokemon, PokemonErrors>`)
+- **Port (Observability)**: `Logger` trait in `src/ports/` defines domain logging interface for observability
+  - Provides `info()`, `error()`, `warn()`, `debug()` methods with structured context
+  - Infrastructure-agnostic - allows swapping logging implementations without changing domain code
 - **Adapter (Driving)**: HTTP server in `src/adapter/http/` maps requests to application service
   - Organized by route: each route module exports `routes()` function
   - `http/mod.rs` merges all route modules and exports `router()` function
   - Maps `PokemonErrors` to HTTP status codes via `IntoResponse`
+  - Integrated with tower-http TraceLayer for HTTP request/response logging
 - **Application Layer**: `PokemonService` in `src/application/` coordinates use cases and port calls
-- **Adapter (Driven)**: `PokeApiAdapter` in `src/adapter/poke_api.rs` implements `Pokedex` by calling PokeAPI
+  - Uses Logger port to emit domain events and trace execution flow
+  - Logs successful operations and errors with structured context
+- **Adapter (Driven - Data)**: `PokeApiAdapter` in `src/adapter/poke_api.rs` implements `Pokedex` by calling PokeAPI
   - Handles HTTP status codes: 200 (success), 404 (not found), 5xx (unavailable)
   - Maps infrastructure errors to domain errors
   - Uses fixtures from `src/adapter/fixtures/` for testing with wiremock
-- **Composition**: `main.rs` constructs adapters, service, and injects dependencies
+- **Adapter (Driven - Logging)**: `TracingLogger` in `src/adapter/tracing_logger.rs` implements `Logger` using tracing crate
+  - Maps domain logging calls to structured tracing events
+  - Formats context key-value pairs for tracing output
+- **Composition**: `main.rs` constructs adapters, services, and injects dependencies
+  - Initializes tracing subscriber for observability
+  - Wires Logger and Pokedex adapters into PokemonService
 
 Flow: HTTP Request → HTTP Adapter → Application Service → Port → Driven Adapter
+Observability: Application Service → Logger Port → TracingLogger Adapter
 
 Benefits:
 
@@ -194,9 +207,12 @@ Current dependencies in `Cargo.toml`:
 - `serde = { version = "1.0", features = ["derive"] }` - Serialization
 - `serde_json = "1.0"` - JSON support
 - `tower = { version = "0.4", features = ["util"] }` - Middleware (used in tests)
+- `tower-http = { version = "0.5", features = ["trace"] }` - HTTP middleware with tracing support
 - `dotenvy = "0.15"` - .env file support for local development
 - `reqwest = { version = "0.11", features = ["json"] }` - HTTP client for API calls
 - `async-trait = "0.1"` - Async trait support
+- `tracing = "0.1"` - Structured logging and diagnostics
+- `tracing-subscriber = { version = "0.3", features = ["env-filter"] }` - Tracing subscriber for collecting events
 
 Dev dependencies:
 
