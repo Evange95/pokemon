@@ -107,6 +107,18 @@ The project uses **Axum 0.7** as the web framework, built on Tokio async runtime
   - Response: JSON with `PokemonResponse` struct
   - Fields are serialized to camelCase (e.g., `isLegendary`)
 
+### Ports & Adapters Pattern
+
+- **Driving Port**: `PokemonApi` trait (`src/api.rs`) defines the application interface used by driving adapters.
+- **Driving Adapter**: HTTP server (`src/http.rs`) maps requests to port calls and returns serialized responses.
+- **Composition**: `main.rs` constructs the port implementation (`StaticPokemonApi`) and injects it into the HTTP adapter.
+
+Benefits:
+
+- Keeps `main.rs` lean and focused on wiring.
+- Enables swapping implementations (e.g., real data source) without changing HTTP code.
+- Improves testability: HTTP tests exercise the adapter with a port implementation.
+
 ### Data Models
 
 - `PokemonResponse` - Serializable struct with serde

@@ -126,6 +126,14 @@ cargo make test-watch
 
 This will automatically run tests, rebuild, and format your code on every file change.
 
+## Architecture
+
+- **Driving Port (`PokemonApi`)**: Trait in `src/api.rs` defining the application-facing API.
+- **Driving Adapter (HTTP)**: Axum router in `src/http.rs` calls into the port.
+- **Main Composition**: `src/main.rs` wires configuration, the port implementation (`StaticPokemonApi`), and the HTTP adapter.
+
+This separation keeps `main.rs` lean and makes it easy to swap adapters or implementations.
+
 ## Docker
 
 ### Build Docker Image
