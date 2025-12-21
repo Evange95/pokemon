@@ -25,7 +25,7 @@ cargo install --force cargo-make
 
 ```bash
 cp .env.example .env
-# Edit .env to customize HOST and PORT
+# Edit .env to customize HOST, PORT, and ENV
 ```
 
 ## Configuration
@@ -34,6 +34,7 @@ The application can be configured using environment variables:
 
 - `HOST` - Server bind address (default: `0.0.0.0`)
 - `PORT` - Server port (default: `3000`)
+- `ENV` - Environment name (default: `development`). Currently informational for deployment; the server behavior does not change based on this value yet.
 
 ### Environment Variables
 
@@ -42,6 +43,7 @@ Create a `.env` file in the project root (see `.env.example` for reference):
 ```bash
 HOST=0.0.0.0
 PORT=3000
+ENV=development
 ```
 
 Or set them directly:
@@ -49,6 +51,7 @@ Or set them directly:
 ```bash
 export HOST=127.0.0.1
 export PORT=8080
+export ENV=production
 cargo run
 ```
 
@@ -171,7 +174,7 @@ Using Docker directly:
 docker run -p 3000:3000 pokemon-api
 
 # Custom environment variables
-docker run -p 8080:8080 -e HOST=0.0.0.0 -e PORT=8080 pokemon-api
+docker run -p 8080:8080 -e HOST=0.0.0.0 -e PORT=8080 -e ENV=production pokemon-api
 ```
 
 ### Docker Compose (optional)
@@ -187,6 +190,7 @@ services:
     environment:
       - HOST=0.0.0.0
       - PORT=3000
+      - ENV=development
 ```
 
 Run with:

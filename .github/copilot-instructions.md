@@ -80,6 +80,7 @@ The application uses a dedicated `config` module (`src/config.rs`) for configura
 
 - `HOST` - Default: `0.0.0.0`
 - `PORT` - Default: `3000`
+- `ENV` - Default: `development` (informational; not currently used in app logic)
 
 #### Pattern
 
@@ -91,6 +92,7 @@ The Dockerfile includes:
 
 - Multi-stage build for optimized image size
 - Environment variables with defaults (`ENV HOST=0.0.0.0`, `ENV PORT=3000`)
+  - Optional: `ENV ENV=development`
 - Non-root user for security
 - Port exposure via `EXPOSE 3000`
 
