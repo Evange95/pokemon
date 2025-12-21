@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct Pokemon {
     pub name: PokemonName,
     pub description: Description,
@@ -9,3 +10,10 @@ type PokemonName = String;
 pub type Description = String;
 pub type Habitat = String;
 pub type IsLegendary = bool;
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum PokemonErrors {
+    PokemonNotFound(String),
+    PokedexUnavailable,
+    InvalidPokemonData(String),
+}

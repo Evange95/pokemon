@@ -89,6 +89,7 @@ The application uses a dedicated `config` module (`src/config.rs`) for configura
 
 - `HOST` - Default: `0.0.0.0`
 - `PORT` - Default: `3000`
+- `POKE_API_BASE_URL` - Default: `https://pokeapi.co/api/v2`
 - `ENV` - Default: `development` (informational; not currently used in app logic)
 
 #### Pattern
@@ -116,19 +117,26 @@ The project uses **Axum 0.7** as the web framework, built on Tokio async runtime
 - `GET /pokemon/:name` - Returns Pokemon data fetched from PokeAPI
   - Location: `src/adapter/http/pokemon.rs`
   - Handler: `get_pokemon_handler` function
-  - Response: JSON with `PokemonResponse` struct
+  - Success Response (200): JSON with `PokemonResponse` struct
+  - Error Responses:
+    - 404 Not Found: When Pokemon doesn't exist
+    - 503 Service Unavailable: When PokeAPI is down
+    - 500 Internal Server Error: When data parsing fails
   - Fields are serialized to camelCase (e.g., `isLegendary`)
 
 ### Ports & Adapters Pattern
 
-- **Domain Layer**: `Pokemon` struct in `src/domain/` represents core business entity
-- **Port (Driving)**: `Pokedex` trait in `src/ports/` defines the application interface
+- **Domain Layer**: `Pokemon` struct and `PokemonErrors` enum in `src/domain/` represent core business entities and domain errors
+- **Port (Driving)**: `Pokedex` trait in `src/ports/` defines the application interface (returns `Result<Pokemon, PokemonErrors>`)
 - **Adapter (Driving)**: HTTP server in `src/adapter/http/` maps requests to application service
   - Organized by route: each route module exports `routes()` function
   - `http/mod.rs` merges all route modules and exports `router()` function
+  - Maps `PokemonErrors` to HTTP status codes via `IntoResponse`
 - **Application Layer**: `PokemonService` in `src/application/` coordinates use cases and port calls
-- **Adapter (Driven)**: `PokeApiAdapter` in `src/adapter/mod.rs` implements `Pokedex` by calling PokeAPI
-  - Also includes `StaticPokemonApi` for testing purposes
+- **Adapter (Driven)**: `PokeApiAdapter` in `src/adapter/poke_api.rs` implements `Pokedex` by calling PokeAPI
+  - Handles HTTP status codes: 200 (success), 404 (not found), 5xx (unavailable)
+  - Maps infrastructure errors to domain errors
+  - Uses fixtures from `src/adapter/fixtures/` for testing with wiremock
 - **Composition**: `main.rs` constructs adapters, service, and injects dependencies
 
 Flow: HTTP Request → HTTP Adapter → Application Service → Port → Driven Adapter
@@ -148,9 +156,17 @@ Benefits:
 - `Pokemon` (in `src/domain/`) - Core domain entity, serializable with serde
   - Uses `#[serde(rename_all = "camelCase")]` for JSON naming
   - Fields: name, description, habitat, is_legendary
+  - Has `Debug` derive for error handling
+- `PokemonErrors` (in `src/domain/`) - Domain error enum
+  - `PokemonNotFound(String)` - Pokemon doesn't exist in the Pokedex
+  - `PokedexUnavailable` - Pokedex service cannot be accessed (maps to infrastructure failures)
+  - `InvalidPokemonData(String)` - Data from Pokedex is malformed or incomplete
 - `PokemonResponse` (in `src/adapter/http/pokemon.rs`) - HTTP response DTO
   - Implements `From<Pokemon>` for domain → DTO conversion
   - Same fields as Pokemon, serialized to camelCase
+- `ErrorResponse` (in `src/adapter/http/pokemon.rs`) - HTTP error response DTO
+  - Contains `error` field with human-readable error message
+  - Implements `IntoResponse` via `PokemonErrors`
 
 ### HTTP Route Organization Pattern
 
@@ -181,6 +197,10 @@ Current dependencies in `Cargo.toml`:
 - `dotenvy = "0.15"` - .env file support for local development
 - `reqwest = { version = "0.11", features = ["json"] }` - HTTP client for API calls
 - `async-trait = "0.1"` - Async trait support
+
+Dev dependencies:
+
+- `wiremock = "0.6"` - HTTP mocking for adapter tests
 
 When adding dependencies:
 
@@ -213,6 +233,37 @@ git commit -m "test: add edge cases for evolution chains"
 ```
 
 Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `perf`, `style`
+
+### Testing Patterns
+
+**Adapter Tests with Fixtures:**
+
+The PokeAPI adapter tests use wiremock for mocking HTTP responses and load fixture data from JSON files:
+
+- **Fixture Location**: `src/adapter/fixtures/`
+  - `mewtwo.json` - Full PokeAPI response for Mewtwo
+  - `pikachu.json` - Full PokeAPI response for Pikachu
+- **Loading Fixtures**: Use `include_str!("fixtures/pokemon.json")` to embed at compile time
+- **Mock Server Pattern**: Create wiremock `MockServer` with appropriate responses for each test scenario
+- **Error Scenarios**: Test 404 Not Found, 503 Service Unavailable, and invalid JSON parsing
+
+Example test structure:
+
+```rust
+#[tokio::test]
+async fn test_adapter_with_fixture() {
+    let mock_server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/pokemon-species/mewtwo"))
+        .respond_with(ResponseTemplate::new(200)
+            .set_body_string(include_str!("fixtures/mewtwo.json")))
+        .mount(&mock_server).await;
+
+    let adapter = PokeApiAdapter::new(mock_server.uri());
+    let result = adapter.get_pokemon("mewtwo".to_string()).await;
+    assert!(result.is_ok());
+}
+```
 
 ### Maintaining Documentation
 

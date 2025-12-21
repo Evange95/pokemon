@@ -34,6 +34,7 @@ The application can be configured using environment variables:
 
 - `HOST` - Server bind address (default: `0.0.0.0`)
 - `PORT` - Server port (default: `3000`)
+- `POKE_API_BASE_URL` - PokeAPI base URL (default: `https://pokeapi.co/api/v2`)
 - `ENV` - Environment name (default: `development`). Currently informational for deployment; the server behavior does not change based on this value yet.
 
 ### Environment Variables
@@ -43,6 +44,7 @@ Create a `.env` file in the project root (see `.env.example` for reference):
 ```bash
 HOST=0.0.0.0
 PORT=3000
+POKE_API_BASE_URL=https://pokeapi.co/api/v2
 ENV=development
 ```
 
@@ -79,6 +81,31 @@ curl http://localhost:3000/pokemon/pikachu
   "isLegendary": false
 }
 ```
+
+**Error Responses:**
+
+- **404 Not Found** - Pokemon doesn't exist:
+
+  ```json
+  {
+    "error": "Pokemon 'unknown' not found"
+  }
+  ```
+
+- **503 Service Unavailable** - PokeAPI is down:
+
+  ```json
+  {
+    "error": "Pokedex service is currently unavailable"
+  }
+  ```
+
+- **500 Internal Server Error** - Invalid data:
+  ```json
+  {
+    "error": "Invalid pokemon data: ..."
+  }
+  ```
 
 ## Development
 
