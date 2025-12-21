@@ -33,11 +33,12 @@ async fn get_pokemon_handler(
     Json(resp.into())
 }
 
-pub fn router(pokedex_service: Arc<PokemonService>) -> Router {
+pub fn routes(pokedex_service: Arc<PokemonService>) -> Router {
     Router::new()
         .route("/pokemon/:name", get(get_pokemon_handler))
         .with_state(pokedex_service)
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -52,7 +53,7 @@ mod tests {
     async fn test_get_pokemon_returns_mewtwo() {
         let api = Arc::new(StaticPokemonApi);
         let service = Arc::new(PokemonService::new(api));
-        let app = router(service);
+        let app = routes(service);
 
         let response = app
             .oneshot(
@@ -76,11 +77,12 @@ mod tests {
         assert_eq!(pokemon.habitat, "rare");
         assert!(pokemon.is_legendary);
     }
+
     #[tokio::test]
     async fn test_response_json_format() {
         let api = Arc::new(StaticPokemonApi);
         let service = Arc::new(PokemonService::new(api));
-        let app = router(service);
+        let app = routes(service);
 
         let response = app
             .oneshot(

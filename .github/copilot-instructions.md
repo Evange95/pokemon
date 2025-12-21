@@ -62,7 +62,9 @@ cargo make test       # Verify tests pass with clean build
 - `src/ports/` - Port traits defining contracts (`Pokedex`)
 - `src/adapter/` - Adapter implementations
   - `mod.rs` - Contains `StaticPokemonApi` implementation
-  - `http.rs` - Axum HTTP adapter
+  - `http/` - Axum HTTP adapter organized by route
+    - `mod.rs` - Router assembly, exports `router()` function
+    - `pokemon.rs` - Pokemon route handler, response DTO, and tests
 - `src/application/` - Use case orchestration layer
   - `PokemonService` - Application service coordinating port calls
 - `src/config.rs` - Configuration module for environment variable management
@@ -112,7 +114,8 @@ The project uses **Axum 0.7** as the web framework, built on Tokio async runtime
 ### Current Endpoints
 
 - `GET /pokemon/:name` - Returns Pokemon data (currently static Mewtwo data)
-  - Handler: `get_pokemon` function
+  - Location: `src/adapter/http/pokemon.rs`
+  - Handler: `get_pokemon_handler` function
   - Response: JSON with `PokemonResponse` struct
   - Fields are serialized to camelCase (e.g., `isLegendary`)
 
@@ -120,7 +123,9 @@ The project uses **Axum 0.7** as the web framework, built on Tokio async runtime
 
 - **Domain Layer**: `Pokemon` struct in `src/domain/` represents core business entity
 - **Port (Driving)**: `Pokedex` trait in `src/ports/` defines the application interface
-- **Adapter (Driving)**: HTTP server in `src/adapter/http.rs` maps requests to application service
+- **Adapter (Driving)**: HTTP server in `src/adapter/http/` maps requests to application service
+  - Organized by route: each route module exports `routes()` function
+  - `http/mod.rs` merges all route modules and exports `router()` function
 - **Application Layer**: `PokemonService` in `src/application/` coordinates use cases and port calls
 - **Adapter (Driven)**: `StaticPokemonApi` in `src/adapter/mod.rs` implements `Pokedex`
 - **Composition**: `main.rs` constructs adapters, service, and injects dependencies
@@ -134,12 +139,33 @@ Benefits:
 - Easy to swap implementations (e.g., database, external API) without changing HTTP code
 - Improves testability: each layer can be tested independently
 - Follows dependency inversion principle
+- Modular route organization: each endpoint lives in its own file for better maintainability
+- Scalable structure: new routes can be added by creating new files and merging in `http/mod.rs`
 
 ### Data Models
 
 - `Pokemon` (in `src/domain/`) - Core domain entity, serializable with serde
   - Uses `#[serde(rename_all = "camelCase")]` for JSON naming
   - Fields: name, description, habitat, is_legendary
+- `PokemonResponse` (in `src/adapter/http/pokemon.rs`) - HTTP response DTO
+  - Implements `From<Pokemon>` for domain → DTO conversion
+  - Same fields as Pokemon, serialized to camelCase
+
+### HTTP Route Organization Pattern
+
+Each route module in `src/adapter/http/` follows this pattern:
+
+1. **Response DTOs** - Define at top of file with serde serialization
+2. **Handler Functions** - Private async functions using Axum extractors
+3. **Route Factory** - Public `routes(service)` function returning `Router<Arc<PokemonService>>`
+4. **Tests** - Integration tests in same file for locality
+
+Example: `pokemon.rs` contains `PokemonResponse`, `get_pokemon_handler`, `routes()`, and tests.
+
+To add a new route:
+1. Create `src/adapter/http/new_route.rs` following the pattern above
+2. Add `mod new_route;` to `src/adapter/http/mod.rs`
+3. Merge routes in `router()` function: `.merge(new_route::routes(service))`
 
 ## Dependencies
 
