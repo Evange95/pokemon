@@ -54,16 +54,46 @@ cargo make test       # Verify tests pass with clean build
 
 ## Project Structure
 
-- `src/main.rs` - Single entry point (project is in early stages)
+- `src/main.rs` - Main application file containing Axum web server and API endpoints
 - `Makefile.toml` - Task definitions (cargo-make configuration)
 - `.github/workflows/ci.yml` - CI pipeline configuration
+- `.github/copilot-instructions.md` - Instructions for AI agents (this file)
+- `README.md` - User-facing documentation
+
+## API Architecture
+
+### Web Framework
+
+The project uses **Axum 0.7** as the web framework, built on Tokio async runtime.
+
+### Current Endpoints
+
+- `GET /pokemon/:name` - Returns Pokemon data (currently static Mewtwo data)
+  - Handler: `get_pokemon` function
+  - Response: JSON with `PokemonResponse` struct
+  - Fields are serialized to camelCase (e.g., `isLegendary`)
+
+### Data Models
+
+- `PokemonResponse` - Serializable struct with serde
+  - Uses `#[serde(rename_all = "camelCase")]` for JSON naming
+  - Fields: name, description, habitat, is_legendary
 
 ## Dependencies
 
-Currently **zero external dependencies** in `Cargo.toml`. When adding dependencies:
+Current dependencies in `Cargo.toml`:
+
+- `axum = "0.7"` - Web framework
+- `tokio = { version = "1", features = ["full"] }` - Async runtime
+- `serde = { version = "1.0", features = ["derive"] }` - Serialization
+- `serde_json = "1.0"` - JSON support
+- `tower = { version = "0.4", features = ["util"] }` - Middleware (used in tests)
+
+When adding dependencies:
 
 - Re-run security audit: `cargo audit` (requires `cargo install cargo-audit`)
 - CI will automatically check for vulnerabilities via rustsec
+- Update this documentation section
 
 ## Development Methodology
 
@@ -93,14 +123,35 @@ Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `perf`, `style`
 
 ### Maintaining Documentation
 
-**Update `.github/copilot-instructions.md` whenever:**
+**CRITICAL: Always update documentation after making changes. This is not optional.**
 
-- Adding new architectural patterns or conventions
-- Introducing new tools or workflows
-- Establishing project-specific patterns
-- Making significant structural changes
+#### Files to Update
 
-Keep instructions current so future AI agents can be immediately productive.
+1. **`.github/copilot-instructions.md` (this file)** - Update whenever:
+
+   - Adding new architectural patterns or conventions
+   - Introducing new tools, dependencies, or workflows
+   - Creating new API endpoints or data models
+   - Establishing project-specific patterns
+   - Making significant structural changes
+   - Adding new development practices or standards
+
+2. **`README.md`** - Update whenever:
+   - Adding new API endpoints
+   - Changing public-facing functionality
+   - Adding new user-facing features
+   - Modifying setup or installation steps
+   - Adding new environment variables or configuration
+
+#### Documentation Standards
+
+- Document **what** was added and **why** it matters
+- Include code examples for new patterns or APIs
+- Update both user documentation (README) and developer documentation (copilot-instructions)
+- Keep documentation in sync with actual implementation
+- Documentation updates should be part of the same commit as the code changes
+
+**Remember: Outdated documentation is worse than no documentation. Future AI agents and developers rely on these files to understand the project quickly and accurately.**
 
 ## Common Pitfalls
 

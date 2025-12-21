@@ -21,6 +21,31 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 cargo install --force cargo-make
 ```
 
+## API
+
+### Endpoints
+
+#### GET /pokemon/:name
+
+Returns Pokemon information. Currently returns static data for Mewtwo regardless of the requested name.
+
+**Example Request:**
+
+```bash
+curl http://localhost:3000/pokemon/pikachu
+```
+
+**Response:**
+
+```json
+{
+  "name": "mewtwo",
+  "description": "It was created by a scientist after years of horrific gene splicing and DNA engineering experiments.",
+  "habitat": "rare",
+  "isLegendary": true
+}
+```
+
 ## Development
 
 ### Available Tasks
@@ -36,12 +61,14 @@ Run tasks using `cargo make <task>`:
 
 ### Quick Start
 
-Build and run:
+Build and run the server:
 
 ```bash
 cargo make build
 cargo run
 ```
+
+The server will start on `http://0.0.0.0:3000`.
 
 Run tests:
 
