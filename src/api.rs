@@ -10,14 +10,14 @@ pub struct PokemonResponse {
 }
 
 // Driving Port: application-facing API used by driving adapters (HTTP, CLI, etc.)
-pub trait PokemonApi: Send + Sync {
+pub trait Pokedex: Send + Sync {
     fn get_pokemon(&self, name: String) -> PokemonResponse;
 }
 
 // Simple adapter that always returns Mewtwo
 pub struct StaticPokemonApi;
 
-impl PokemonApi for StaticPokemonApi {
+impl Pokedex for StaticPokemonApi {
     fn get_pokemon(&self, _name: String) -> PokemonResponse {
         PokemonResponse {
             name: "mewtwo".to_string(),

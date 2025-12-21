@@ -2,9 +2,9 @@ use std::sync::Arc;
 
 use axum::{extract::Path, extract::State, routing::get, Json, Router};
 
-use crate::api::{PokemonApi, PokemonResponse};
+use crate::api::{Pokedex, PokemonResponse};
 
-async fn get_pokemon_handler<T: PokemonApi + 'static>(
+async fn get_pokemon_handler<T: Pokedex + 'static>(
     State(pokedex_service): State<Arc<T>>, // driving adapter calls into driving port
     Path(name): Path<String>,
 ) -> Json<PokemonResponse> {
@@ -12,7 +12,7 @@ async fn get_pokemon_handler<T: PokemonApi + 'static>(
     Json(resp)
 }
 
-pub fn router<T: PokemonApi + 'static>(pokedex_service: Arc<T>) -> Router {
+pub fn router<T: Pokedex + 'static>(pokedex_service: Arc<T>) -> Router {
     Router::new()
         .route("/pokemon/:name", get(get_pokemon_handler::<T>))
         .with_state(pokedex_service)
