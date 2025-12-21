@@ -1,11 +1,15 @@
 mod adapter;
-mod api;
+mod application;
 mod config;
+mod domain;
+mod ports;
 
 use adapter::http;
-use api::StaticPokemonApi;
 use config::Config;
 use std::sync::Arc;
+
+use crate::adapter::StaticPokemonApi;
+use crate::application::PokemonService;
 
 #[tokio::main]
 async fn main() {
@@ -14,7 +18,8 @@ async fn main() {
     let config = Config::from_env().expect("Failed to load configuration");
     let address = config.address();
 
-    let pokemon_service = Arc::new(StaticPokemonApi);
+    let pokedex = Arc::new(StaticPokemonApi);
+    let pokemon_service = Arc::new(PokemonService::new(pokedex));
     let app = http::router(pokemon_service);
     let listener = tokio::net::TcpListener::bind(&address)
         .await

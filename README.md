@@ -131,11 +131,20 @@ This will automatically run tests, rebuild, and format your code on every file c
 
 ## Architecture
 
-- **Driving Port (`PokemonApi`)**: Trait in `src/api.rs` defining the application-facing API.
-- **Driving Adapter (HTTP)**: Axum router in `src/http.rs` calls into the port.
-- **Main Composition**: `src/main.rs` wires configuration, the port implementation (`StaticPokemonApi`), and the HTTP adapter.
+The project follows a clean hexagonal (ports & adapters) architecture:
 
-This separation keeps `main.rs` lean and makes it easy to swap adapters or implementations.
+- **Domain (`src/domain/`)**: Core business entities (`Pokemon` model)
+- **Ports (`src/ports/`)**: Interfaces defining contracts (`Pokedex` trait)
+- **Adapters (`src/adapter/`)**: Implementations of ports
+  - `StaticPokemonApi`: Returns static Mewtwo data (implements `Pokedex`)
+  - `http`: Axum HTTP adapter
+- **Application (`src/application/`)**: Use case orchestration (`PokemonService`)
+- **Config (`src/config.rs`)**: Environment configuration management
+- **Main (`src/main.rs`)**: Dependency injection and server bootstrap
+
+Flow: HTTP adapter → Application service → Port → Adapter implementation
+
+This layered separation keeps concerns isolated and makes it easy to swap implementations or add new adapters.
 
 ## Docker
 

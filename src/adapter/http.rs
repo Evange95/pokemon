@@ -1,23 +1,43 @@
 use std::sync::Arc;
 
 use axum::{extract::Path, extract::State, routing::get, Json, Router};
+use serde::{Deserialize, Serialize};
 
-use crate::api::{Pokedex, PokemonResponse};
+use crate::{application::PokemonService, domain::Pokemon};
 
-async fn get_pokemon_handler<T: Pokedex + 'static>(
-    State(pokedex_service): State<Arc<T>>, // driving adapter calls into driving port
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct PokemonResponse {
+    pub name: String,
+    pub description: String,
+    pub habitat: String,
+    pub is_legendary: bool,
+}
+
+impl From<Pokemon> for PokemonResponse {
+    fn from(pokemon: Pokemon) -> Self {
+        PokemonResponse {
+            name: pokemon.name,
+            description: pokemon.description,
+            habitat: pokemon.habitat,
+            is_legendary: pokemon.is_legendary,
+        }
+    }
+}
+
+async fn get_pokemon_handler(
+    State(pokedex_service): State<Arc<PokemonService>>,
     Path(name): Path<String>,
 ) -> Json<PokemonResponse> {
-    let resp = pokedex_service.get_pokemon(name);
-    Json(resp)
+    let resp: Pokemon = pokedex_service.get_pokemon(name);
+    Json(resp.into())
 }
 
-pub fn router<T: Pokedex + 'static>(pokedex_service: Arc<T>) -> Router {
+pub fn router(pokedex_service: Arc<PokemonService>) -> Router {
     Router::new()
-        .route("/pokemon/:name", get(get_pokemon_handler::<T>))
+        .route("/pokemon/:name", get(get_pokemon_handler))
         .with_state(pokedex_service)
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -26,12 +46,13 @@ mod tests {
     use std::sync::Arc;
     use tower::util::ServiceExt; // oneshot
 
-    use crate::api::{PokemonResponse, StaticPokemonApi};
+    use crate::adapter::StaticPokemonApi;
 
     #[tokio::test]
     async fn test_get_pokemon_returns_mewtwo() {
         let api = Arc::new(StaticPokemonApi);
-        let app = router(api);
+        let service = Arc::new(PokemonService::new(api));
+        let app = router(service);
 
         let response = app
             .oneshot(
@@ -55,11 +76,11 @@ mod tests {
         assert_eq!(pokemon.habitat, "rare");
         assert!(pokemon.is_legendary);
     }
-
     #[tokio::test]
     async fn test_response_json_format() {
         let api = Arc::new(StaticPokemonApi);
-        let app = router(api);
+        let service = Arc::new(PokemonService::new(api));
+        let app = router(service);
 
         let response = app
             .oneshot(

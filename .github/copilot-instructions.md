@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-This is a Rust project using **cargo-make** for task automation. The codebase is in early stages with minimal implementation (single `main.rs` file currently).
+This is a Rust project using **cargo-make** for task automation. The codebase follows a clean hexagonal architecture with separation of domain, ports, adapters, and application layers.
 
 ## Build System & Workflows
 
@@ -57,7 +57,14 @@ cargo make test       # Verify tests pass with clean build
 
 ## Project Structure
 
-- `src/main.rs` - Main application file containing Axum web server and API endpoints
+- `src/main.rs` - Application entry point, dependency injection, and server bootstrap
+- `src/domain/` - Domain models and business entities (`Pokemon`)
+- `src/ports/` - Port traits defining contracts (`Pokedex`)
+- `src/adapter/` - Adapter implementations
+  - `mod.rs` - Contains `StaticPokemonApi` implementation
+  - `http.rs` - Axum HTTP adapter
+- `src/application/` - Use case orchestration layer
+  - `PokemonService` - Application service coordinating port calls
 - `src/config.rs` - Configuration module for environment variable management
 - `Makefile.toml` - Task definitions (cargo-make configuration)
 - `.github/workflows/ci.yml` - CI pipeline configuration
@@ -111,19 +118,26 @@ The project uses **Axum 0.7** as the web framework, built on Tokio async runtime
 
 ### Ports & Adapters Pattern
 
-- **Driving Port**: `PokemonApi` trait (`src/api.rs`) defines the application interface used by driving adapters.
-- **Driving Adapter**: HTTP server (`src/http.rs`) maps requests to port calls and returns serialized responses.
-- **Composition**: `main.rs` constructs the port implementation (`StaticPokemonApi`) and injects it into the HTTP adapter.
+- **Domain Layer**: `Pokemon` struct in `src/domain/` represents core business entity
+- **Port (Driving)**: `Pokedex` trait in `src/ports/` defines the application interface
+- **Adapter (Driving)**: HTTP server in `src/adapter/http.rs` maps requests to application service
+- **Application Layer**: `PokemonService` in `src/application/` coordinates use cases and port calls
+- **Adapter (Driven)**: `StaticPokemonApi` in `src/adapter/mod.rs` implements `Pokedex`
+- **Composition**: `main.rs` constructs adapters, service, and injects dependencies
+
+Flow: HTTP Request → HTTP Adapter → Application Service → Port → Driven Adapter
 
 Benefits:
 
-- Keeps `main.rs` lean and focused on wiring.
-- Enables swapping implementations (e.g., real data source) without changing HTTP code.
-- Improves testability: HTTP tests exercise the adapter with a port implementation.
+- Clean separation between domain, ports, and adapters
+- Application layer can add business logic, validation, transactions
+- Easy to swap implementations (e.g., database, external API) without changing HTTP code
+- Improves testability: each layer can be tested independently
+- Follows dependency inversion principle
 
 ### Data Models
 
-- `PokemonResponse` - Serializable struct with serde
+- `Pokemon` (in `src/domain/`) - Core domain entity, serializable with serde
   - Uses `#[serde(rename_all = "camelCase")]` for JSON naming
   - Fields: name, description, habitat, is_legendary
 
