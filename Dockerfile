@@ -62,5 +62,12 @@ RUN chown -R appuser:appuser /app
 # Switch to non-root user
 USER appuser
 
+# Environment variables with defaults
+ENV HOST=0.0.0.0
+ENV PORT=3000
+
+# Expose the port
+EXPOSE 3000
+
 # Set the binary as entrypoint
 ENTRYPOINT ["./pokemon"]
