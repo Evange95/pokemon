@@ -24,7 +24,6 @@ docs/
 .gitlab-ci.yml
 
 # Cargo artifacts
-Cargo.lock
 **/*.rs.bk
 
 # OS specific

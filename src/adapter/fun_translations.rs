@@ -70,8 +70,8 @@ impl Translator for FunTranslationsAdapter {
 mod tests {
     use super::*;
     use wiremock::{
-        matchers::{method, path},
         Mock, MockServer, ResponseTemplate,
+        matchers::{method, path},
     };
 
     #[tokio::test]

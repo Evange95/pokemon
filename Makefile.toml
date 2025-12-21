@@ -47,7 +47,3 @@ command = "docker"
 args = ["run", "-p", "3000:3000", "pokemon-api"]
 description = "Run Docker container with default configuration (port 3000)"
 
-[tasks.docker-run-custom]
-command = "docker"
-args = ["run", "-p", "8080:8080", "-e", "HOST=0.0.0.0", "-e", "PORT=8080", "pokemon-api"]
-description = "Run Docker container with custom port (8080)"

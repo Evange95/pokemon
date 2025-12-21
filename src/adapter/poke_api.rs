@@ -88,8 +88,8 @@ impl Pokedex for PokeApiAdapter {
 mod tests {
     use super::*;
     use wiremock::{
-        matchers::{method, path},
         Mock, MockServer, ResponseTemplate,
+        matchers::{method, path},
     };
 
     async fn setup_mock_server_with_pokemon(pokemon_name: &str) -> MockServer {
@@ -120,9 +120,11 @@ mod tests {
         assert_eq!(pokemon.habitat, "rare");
         assert!(pokemon.is_legendary);
         assert!(!pokemon.description.is_empty());
-        assert!(pokemon
-            .description
-            .contains("created by a scientist after years"));
+        assert!(
+            pokemon
+                .description
+                .contains("created by a scientist after years")
+        );
     }
 
     #[tokio::test]

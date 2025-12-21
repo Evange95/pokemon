@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use axum::{extract::Path, extract::State, routing::get, Json, Router};
+use axum::{Json, Router, extract::Path, extract::State, routing::get};
 
 use crate::application::PokemonService;
 use crate::domain::PokemonErrors;
@@ -18,7 +18,7 @@ async fn get_translated_pokemon_handler(
 pub fn routes(pokemon_service: Arc<PokemonService>) -> Router {
     Router::new()
         .route(
-            "/pokemon/translated/:name",
+            "/pokemon/translated/{name}",
             get(get_translated_pokemon_handler),
         )
         .with_state(pokemon_service)

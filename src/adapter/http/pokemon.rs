@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
 use axum::{
+    Json, Router,
     extract::Path,
     extract::State,
     http::StatusCode,
     response::{IntoResponse, Response},
     routing::get,
-    Json, Router,
 };
 use serde::{Deserialize, Serialize};
 
@@ -71,7 +71,7 @@ async fn get_pokemon_handler(
 
 pub fn routes(pokedex_service: Arc<PokemonService>) -> Router {
     Router::new()
-        .route("/pokemon/:name", get(get_pokemon_handler))
+        .route("/pokemon/{name}", get(get_pokemon_handler))
         .with_state(pokedex_service)
 }
 
@@ -130,7 +130,10 @@ mod tests {
         let pokemon: PokemonResponse = serde_json::from_slice(&body).unwrap();
 
         assert_eq!(pokemon.name, "mewtwo");
-        assert_eq!(pokemon.description, "It was created by a scientist after years of horrific gene splicing and DNA engineering experiments.");
+        assert_eq!(
+            pokemon.description,
+            "It was created by a scientist after years of horrific gene splicing and DNA engineering experiments."
+        );
         assert_eq!(pokemon.habitat, "rare");
         assert!(pokemon.is_legendary);
     }
