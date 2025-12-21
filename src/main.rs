@@ -1,4 +1,7 @@
+mod config;
+
 use axum::{extract::Path, routing::get, Json, Router};
+use config::Config;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
@@ -25,9 +28,18 @@ fn app() -> Router {
 
 #[tokio::main]
 async fn main() {
+    // Load .env file if present (optional, falls back to system env vars)
+    let _ = dotenvy::dotenv();
+
+    let config = Config::from_env().expect("Failed to load configuration");
+    let address = config.address();
+
     let app = app();
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    println!("Server listening on http://0.0.0.0:3000");
+    let listener = tokio::net::TcpListener::bind(&address)
+        .await
+        .unwrap_or_else(|_| panic!("Failed to bind to {address}"));
+
+    println!("Server listening on http://{address}");
     axum::serve(listener, app).await.unwrap();
 }
 
@@ -62,6 +74,6 @@ mod tests {
         assert_eq!(pokemon.name, "mewtwo");
         assert_eq!(pokemon.description, "It was created by a scientist after years of horrific gene splicing and DNA engineering experiments.");
         assert_eq!(pokemon.habitat, "rare");
-        assert_eq!(pokemon.is_legendary, true);
+        assert!(pokemon.is_legendary);
     }
 }

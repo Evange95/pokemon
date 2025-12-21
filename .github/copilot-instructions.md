@@ -15,6 +15,9 @@ This is a Rust project using **cargo-make** for task automation. The codebase is
 - `cargo make format` - Auto-formats code with rustfmt
 - `cargo make clippy-watch` - Watch mode with clippy linting
 - `cargo make test-watch` - Watch mode that runs tests + build + format on file changes
+- `cargo make docker-build` - Build Docker image
+- `cargo make docker-run` - Run Docker container with default configuration
+- `cargo make docker-run-custom` - Run Docker container with custom port (8080)
 
 ### Development Workflow
 
@@ -55,10 +58,41 @@ cargo make test       # Verify tests pass with clean build
 ## Project Structure
 
 - `src/main.rs` - Main application file containing Axum web server and API endpoints
+- `src/config.rs` - Configuration module for environment variable management
 - `Makefile.toml` - Task definitions (cargo-make configuration)
 - `.github/workflows/ci.yml` - CI pipeline configuration
 - `.github/copilot-instructions.md` - Instructions for AI agents (this file)
 - `README.md` - User-facing documentation
+- `.env.example` - Example environment variables file
+- `Dockerfile` - Multi-stage Docker build configuration
+
+## Configuration Management
+
+### Environment Variables
+
+The application uses a dedicated `config` module (`src/config.rs`) for configuration:
+
+- **`Config` struct** - Holds server configuration (host, port)
+- **`Config::from_env()`** - Loads config from environment variables with defaults
+- **`Config::address()`** - Returns formatted bind address
+
+#### Default Values
+
+- `HOST` - Default: `0.0.0.0`
+- `PORT` - Default: `3000`
+
+#### Pattern
+
+Always use the `Config` module for configuration management. Keep main.rs lean by separating concerns into dedicated modules.
+
+### Docker Configuration
+
+The Dockerfile includes:
+
+- Multi-stage build for optimized image size
+- Environment variables with defaults (`ENV HOST=0.0.0.0`, `ENV PORT=3000`)
+- Non-root user for security
+- Port exposure via `EXPOSE 3000`
 
 ## API Architecture
 
@@ -88,6 +122,7 @@ Current dependencies in `Cargo.toml`:
 - `serde = { version = "1.0", features = ["derive"] }` - Serialization
 - `serde_json = "1.0"` - JSON support
 - `tower = { version = "0.4", features = ["util"] }` - Middleware (used in tests)
+- `dotenvy = "0.15"` - .env file support for local development
 
 When adding dependencies:
 
